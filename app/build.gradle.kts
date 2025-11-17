@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services)
+    kotlin("kapt")
 }
 
 android {
@@ -61,6 +62,11 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.navigation:navigation-compose:2.8.3")
 
+    // Room Database
+    implementation("androidx.room:room-runtime:2.6.0")
+    implementation("androidx.room:room-ktx:2.6.0")
+    kapt("androidx.room:room-compiler:2.6.0")
+
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
@@ -84,11 +90,6 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
     // Pager for horizontal carousel
-    implementation ("com.google.accompanist:accompanist-pager:0.30.1")
-    implementation ("com.google.accompanist:accompanist-pager-indicators:0.30.1")
-
-    implementation ("androidx.compose.material3:material3:1.2.0-alpha01")
-    implementation ("androidx.compose.ui:ui:1.6.0") // core Compose UI
-    implementation ("androidx.compose.ui:ui-tooling-preview:1.6.0")
-    implementation ("androidx.activity:activity-compose:1.9.0")
+    implementation("com.google.accompanist:accompanist-pager:0.30.1")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.30.1")
 }
