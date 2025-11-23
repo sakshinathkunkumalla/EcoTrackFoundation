@@ -47,19 +47,21 @@ fun HomeScreen(
         },
         containerColor = Color(0xFFE0F2F1)
     ) { innerPadding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 24.dp)
         ) {
+            // Header
             Text(
                 text = "Welcome Back!",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF00796B)
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Here’s your eco-dashboard overview.",
                 fontSize = 16.sp,
@@ -67,10 +69,10 @@ fun HomeScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Dashboard cards
+            // Dashboard Cards
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 DashboardCard(
                     title = "Activities",
@@ -84,12 +86,14 @@ fun HomeScreen(
                 )
                 DashboardCard(
                     title = "Challenges",
-                    value = "3",
+                    value = "3", // Placeholder, can be dynamic later
                     modifier = Modifier.weight(1f)
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            // Recent Activities
             Text(
                 text = "Recent Activities",
                 fontSize = 20.sp,
@@ -111,8 +115,7 @@ fun HomeScreen(
                 ) {
                     items(activities) { activity ->
                         ActivityCard(
-                            activityName = activity.type,
-                            co2Saved = activity.co2Saved,
+                            activity = activity,
                             onEdit = { onEditActivity(activity.id) },
                             onDelete = { activityViewModel.deleteActivity(activity) }
                         )
@@ -121,6 +124,8 @@ fun HomeScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            // Logout Button
             Button(
                 onClick = onLogout,
                 modifier = Modifier
@@ -172,13 +177,14 @@ fun DashboardCard(title: String, value: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun ActivityCard(
-    activityName: String,
-    co2Saved: Double,
+    activity: com.example.ecotrack.model.ActivityEntity,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onEdit() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -191,8 +197,20 @@ fun ActivityCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = activityName, fontWeight = FontWeight.Bold, color = Color(0xFF00796B))
-                Text(text = String.format("~%.2f kg CO₂", co2Saved), color = Color.Gray)
+                Text(
+                    text = activity.type,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF00796B)
+                )
+                Text(
+                    text = String.format("~%.2f kg CO₂", activity.co2Saved),
+                    color = Color.Gray
+                )
+                Text(
+                    text = "${activity.durationMinutes} min • ${activity.caloriesBurned} cal",
+                    color = Color.Gray,
+                    fontSize = 12.sp
+                )
             }
 
             Row {

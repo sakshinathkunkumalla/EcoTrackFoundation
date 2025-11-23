@@ -1,6 +1,7 @@
 package com.example.ecotrack.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.ecotrack.model.ActivityEntity
 import com.example.ecotrack.repository.ActivityRepository
@@ -35,7 +36,19 @@ class ActivityViewModel(private val repository: ActivityRepository) : ViewModel(
         repository.deleteActivity(activity)
     }
 
-    fun totalCO2Saved(): Double {
-        return _activities.value.sumOf { it.co2Saved }
+    // Aggregate helper functions
+    fun totalCO2Saved(): Double = _activities.value.sumOf { it.co2Saved }
+    fun totalCaloriesBurned(): Int = _activities.value.sumOf { it.caloriesBurned }
+    fun totalDurationMinutes(): Int = _activities.value.sumOf { it.durationMinutes }
+
+    // Factory for Compose / NavHost
+    @Suppress("UNCHECKED_CAST")
+    class Factory(private val repository: ActivityRepository) : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(ActivityViewModel::class.java)) {
+                return ActivityViewModel(repository) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
     }
 }

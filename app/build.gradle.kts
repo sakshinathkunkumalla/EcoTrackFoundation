@@ -69,11 +69,12 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3") // updated version
 
-    // Firebase Auth (BOM for version alignment)
-    implementation(platform("com.google.firebase:firebase-bom:32.2.0"))
+    // Firebase (BOM for version alignment)
+    implementation(platform("com.google.firebase:firebase-bom:32.2.2")) // updated version
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx") // added Firestore
 
     // Google Sign-In
     implementation("com.google.android.gms:play-services-auth:21.1.1")
