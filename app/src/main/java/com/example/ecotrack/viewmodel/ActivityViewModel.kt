@@ -24,19 +24,22 @@ class ActivityViewModel(private val repository: ActivityRepository) : ViewModel(
         }
     }
 
+    // Add activities
     fun addActivity(activity: ActivityEntity) = viewModelScope.launch {
         repository.addActivity(activity)
     }
 
+    // Update activities
     fun updateActivity(activity: ActivityEntity) = viewModelScope.launch {
         repository.updateActivity(activity)
     }
 
+    // Delete activities
     fun deleteActivity(activity: ActivityEntity) = viewModelScope.launch {
         repository.deleteActivity(activity)
     }
 
-    // Aggregate helper functions
+    // Helper functions
     fun totalCO2Saved(): Double = _activities.value.sumOf { it.co2Saved }
     fun totalCaloriesBurned(): Int = _activities.value.sumOf { it.caloriesBurned }
     fun totalDurationMinutes(): Int = _activities.value.sumOf { it.durationMinutes }

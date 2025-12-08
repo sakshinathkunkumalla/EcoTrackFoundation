@@ -13,12 +13,10 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -31,210 +29,111 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(
-    authViewModel: AuthViewModel,
-    onRegisterSuccess: () -> Unit
-) {
-    val context = LocalContext.current
-
-    val username = rememberSaveable { mutableStateOf("") }
-    val email = rememberSaveable { mutableStateOf("") }
-    val password = rememberSaveable { mutableStateOf("") }
-    val rePassword = rememberSaveable { mutableStateOf("") }
-
-    val authError by authViewModel.authError
-    val loading by authViewModel.loading
+fun RegisterScreen(authViewModel: AuthViewModel, onRegisterSuccess: () -> Unit) {
+    val context = LocalContext.current // get context
+    val username = rememberSaveable { mutableStateOf("") } // username state
+    val email = rememberSaveable { mutableStateOf("") } // email state
+    val password = rememberSaveable { mutableStateOf("") } // password state
+    val rePassword = rememberSaveable { mutableStateOf("") } // re-password state
+    val authError by authViewModel.authError // auth error
+    val loading by authViewModel.loading // loading state
     var passwordMatchError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(authViewModel.currentUser.value) {
+        authViewModel.currentUser.value?.let { onRegisterSuccess() } // auto login
+    }
 
     // Google Sign-In setup
     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-        .requestIdToken("339248216040-sqsur44s12cv2bvoai3r5kfp04ggb91t.apps.googleusercontent.com") // Web Client ID
+        .requestIdToken("389736738596-i0rr69fvvqafvvrjb9a6e0t0r3qkfdlt.apps.googleusercontent.com")
         .requestEmail()
-        .build()
-    val googleSignInClient: GoogleSignInClient = GoogleSignIn.getClient(context, gso)
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
+        .build() // google options
+    val googleSignInClient: GoogleSignInClient = GoogleSignIn.getClient(context, gso) // google client
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data) // get account
             try {
                 val account = task.getResult(Exception::class.java)
-                val idToken = account?.idToken
-                if (idToken != null) {
-                    authViewModel.firebaseAuthWithGoogle(idToken) {
-                        onRegisterSuccess()
-                    }
-                } else {
-                    authViewModel.authError.value = "Google sign-in failed: Missing token"
-                }
+                account?.let { authViewModel.firebaseAuthWithGoogle(it) { onRegisterSuccess() } } // google login
             } catch (e: Exception) {
-                authViewModel.authError.value = "Google sign-in error: ${e.message}"
+                authViewModel.authError.value = e.message
             }
-        } else {
-            authViewModel.authError.value = "Google sign-in cancelled"
         }
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFF80CBC4), Color(0xFFE0F2F1))
-                )
-            ),
+            .background(Brush.verticalGradient(listOf(Color(0xFF80CBC4), Color(0xFFE0F2F1)))),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .shadow(8.dp, RoundedCornerShape(16.dp))
                 .background(Color.White, RoundedCornerShape(16.dp))
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Create Account",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF00796B)
-            )
+            // header
+            Text("Create Account", fontSize = 28.sp, color = Color(0xFF00796B))
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Sign up to continue",
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
+            // subtitle
+            Text("Sign up to continue", fontSize = 16.sp, color = Color.Gray)
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Username Field
-            OutlinedTextField(
-                value = username.value,
-                onValueChange = { username.value = it },
-                label = { Text("Username") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
+            // Input Fields
+            OutlinedTextField(value = username.value, onValueChange = { username.value = it }, label = { Text("Username") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Email Field
-            OutlinedTextField(
-                value = email.value,
-                onValueChange = { email.value = it },
-                label = { Text("Email") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
+            // email field
+            OutlinedTextField(value = email.value, onValueChange = { email.value = it }, label = { Text("Email") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Password Field
-            OutlinedTextField(
-                value = password.value,
-                onValueChange = { password.value = it },
-                label = { Text("Password (6+ chars)") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
+            // password field
+            OutlinedTextField(value = password.value, onValueChange = { password.value = it }, label = { Text("Password (6+ chars)") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Re-enter Password Field
-            OutlinedTextField(
-                value = rePassword.value,
-                onValueChange = { rePassword.value = it },
-                label = { Text("Re-enter Password") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
+            // re-password field
+            OutlinedTextField(value = rePassword.value, onValueChange = { rePassword.value = it }, label = { Text("Re-enter Password") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp))
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Register Button
             Button(
                 onClick = {
-                    if (password.value != rePassword.value) {
-                        passwordMatchError = "Passwords do not match"
-                    } else {
-                        passwordMatchError = null
-                        authViewModel.registerWithEmail(email.value, password.value) {
-                            onRegisterSuccess()
-                        }
-                    }
+                    // mismatch check
+                    if (password.value != rePassword.value) passwordMatchError = "Passwords do not match"
+                    // register email
+                    else { passwordMatchError = null; authViewModel.registerWithEmail(email.value, password.value) { onRegisterSuccess() } }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (loading) Color.Gray else Color(0xFF00796B)
-                ),
                 enabled = !loading
             ) {
-                if (loading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        strokeWidth = 2.dp,
-                        modifier = Modifier.size(24.dp)
-                    )
-                } else {
-                    Text(
-                        text = "Register",
-                        fontSize = 18.sp,
-                        color = Color.White,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
+                if (loading) CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+                else Text("Register", color = Color.White) // button text
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Google Button
             OutlinedButton(
                 onClick = {
-                    googleSignInClient.revokeAccess().addOnCompleteListener {
-                        launcher.launch(googleSignInClient.signInIntent)
-                    }
+                    authViewModel.signOut() // sign out
+                    googleSignInClient.signOut().addOnCompleteListener { launcher.launch(googleSignInClient.signInIntent) }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.google_logo),
-                        contentDescription = "Google Logo",
-                        modifier = Modifier.size(24.dp)
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    // google icon
+                    Image(painter = painterResource(id = R.drawable.google_logo), contentDescription = null, modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Continue with Google",
-                        fontSize = 16.sp,
-                        color = Color.Black
-                    )
+                    Text("Continue with Google", fontSize = 16.sp) // google text
                 }
             }
 
-            // Password mismatch error
-            passwordMatchError?.let { err ->
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(err, color = MaterialTheme.colorScheme.error)
-            }
-
-            // Firebase / Auth errors
-            authError?.let { err ->
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(err, color = MaterialTheme.colorScheme.error)
-            }
+            // Error messages
+            passwordMatchError?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp)) }
+            authError?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp)) }
         }
     }
 }

@@ -3,40 +3,53 @@ package com.example.ecotrack
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.example.ecotrack.model.AppDatabase
+import androidx.navigation.NavType
+import androidx.navigation.compose.*
+import androidx.navigation.navArgument
 import com.example.ecotrack.pages.*
-import com.example.ecotrack.repository.ActivityRepository
-import com.example.ecotrack.viewmodel.ActivityViewModel
-import com.example.ecotrack.viewmodel.DashboardViewModel
+import com.example.ecotrack.model.AppDatabase
+import com.example.ecotrack.repository.*
+import com.example.ecotrack.viewmodel.*
 
 @Composable
 fun AppNavHost() {
+
     val navController = rememberNavController()
     val context = LocalContext.current
 
-    // Auth ViewModel (singleton for the whole app)
-    val authViewModel: AuthViewModel = viewModel()
+    // Database with repositories
+    val db = AppDatabase.getDatabase(context)
+    val activityRepo = ActivityRepository(db.activityDao())
+    val rewardRepo = RewardRepository(db.rewardDao())
+    val challengeRepo = ChallengeRepository(db.challengeDao())
 
-    // Activity ViewModel (Room + Repository)
-    val dao = AppDatabase.getDatabase(context).activityDao()
-    val repository = ActivityRepository(dao)
-    val activityViewModel: ActivityViewModel = viewModel(factory = ActivityViewModel.Factory(repository))
+    // ViewModels
+    val authViewModel: AuthViewModel = viewModel()
+    val activityViewModel: ActivityViewModel =
+        viewModel(factory = ActivityViewModel.Factory(activityRepo))
+    val rewardViewModel: RewardViewModel =
+        viewModel(factory = RewardViewModel.Factory(rewardRepo))
+    val challengeViewModel: ChallengeViewModel =
+        viewModel(factory = ChallengeViewModel.Factory(challengeRepo, rewardRepo))
 
     NavHost(navController = navController, startDestination = "splash") {
 
-        // Splash Screen
+        //  Splash Screen
         composable("splash") {
             SplashScreen {
-                navController.navigate("onboarding") {
-                    popUpTo("splash") { inclusive = true }
+                if (authViewModel.currentUser.value != null) {
+                    navController.navigate("home") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                } else {
+                    navController.navigate("onboarding") {
+                        popUpTo("splash") { inclusive = true }
+                    }
                 }
             }
         }
 
-        // Onboarding
+        // Onboarding Screen
         composable("onboarding") {
             OnboardingScreen {
                 navController.navigate("login") {
@@ -45,7 +58,7 @@ fun AppNavHost() {
             }
         }
 
-        // Login
+        // Login Screen
         composable("login") {
             LoginScreen(
                 authViewModel = authViewModel,
@@ -58,7 +71,7 @@ fun AppNavHost() {
             )
         }
 
-        // Register
+        // Register Screen
         composable("register") {
             RegisterScreen(
                 authViewModel = authViewModel,
@@ -70,35 +83,76 @@ fun AppNavHost() {
             )
         }
 
-        // Home / Dashboard
+        // Home Screen
         composable("home") {
             HomeScreen(
                 activityViewModel = activityViewModel,
+                challengeViewModel = challengeViewModel,
+                rewardViewModel = rewardViewModel,
                 onLogout = {
                     authViewModel.signOut()
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
                 },
-                onAddActivity = { navController.navigate("activity") },
-                onEditActivity = { activityId -> navController.navigate("activity/$activityId") }
+                onAddActivity = { navController.navigate("activity/-1") },
+                onEditActivity = { id -> navController.navigate("activity/$id") },
+                onNavigateToChallenges = { navController.navigate("challenges") },
+                onNavigateToRewards = { navController.navigate("rewards") }
             )
         }
 
-        // Add Activity
-        composable("activity") {
+        // Activity Add/Edit
+        composable(
+            "activity/{activityId}",
+            arguments = listOf(navArgument("activityId") {
+                type = NavType.IntType
+                defaultValue = -1
+            })
+        ) { backStack ->
+            val activityId = backStack.arguments?.getInt("activityId")
             ActivityScreen(
                 viewModel = activityViewModel,
+                activityId = if (activityId != -1) activityId else null,
+                navController = navController
+            )
+        }
+
+        // Challenge List
+        composable("challenges") {
+            ChallengeListScreen(
+                vm = challengeViewModel,
+                onOpenChallenge = { id -> navController.navigate("challenge/$id") },
+                onAddChallenge = { navController.navigate("challenge/add") },
+                onBack = { navController.popBackStack() }  // ← pass back callback
+            )
+        }
+
+        // Add Challenge
+        composable("challenge/add") {
+            AddChallengeScreen(
+                vm = challengeViewModel,
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // Edit Activity
-        composable("activity/{activityId}") { backStackEntry ->
-            val activityId = backStackEntry.arguments?.getString("activityId")?.toIntOrNull()
-            ActivityScreen(
-                viewModel = activityViewModel,
-                activityId = activityId,
+        // Challenge Detail
+        composable(
+            "challenge/{challengeId}",
+            arguments = listOf(navArgument("challengeId") { type = NavType.IntType })
+        ) { backStack ->
+            ChallengeDetailScreen(
+                vm = challengeViewModel,
+                rewardVm = rewardViewModel,
+                challengeId = backStack.arguments?.getInt("challengeId"),
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // Rewards Screen
+        composable("rewards") {
+            RewardsScreen(
+                vm = rewardViewModel,
                 onBack = { navController.popBackStack() }
             )
         }

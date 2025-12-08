@@ -2,7 +2,11 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    // Firebase & Google services plugin
     alias(libs.plugins.google.gms.google.services)
+
+    // Room annotation processor
     kotlin("kapt")
 }
 
@@ -49,48 +53,73 @@ android {
 }
 
 dependencies {
-    // AndroidX Core
+
+    // ----------------------------
+    // AndroidX Core & Lifecycle
+    // ----------------------------
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
 
-    // Jetpack Compose (BOM for version alignment)
+    // ----------------------------
+    // Jetpack Compose
+    // ----------------------------
     implementation(platform("androidx.compose:compose-bom:2024.10.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.navigation:navigation-compose:2.8.3")
 
+    // ----------------------------
     // Room Database
+    // ----------------------------
     implementation("androidx.room:room-runtime:2.6.0")
     implementation("androidx.room:room-ktx:2.6.0")
+    implementation(libs.firebase.auth)
     kapt("androidx.room:room-compiler:2.6.0")
 
-    // Coroutines
+    // ----------------------------
+    // Kotlin Coroutines
+    // ----------------------------
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3") // updated version
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
 
-    // Firebase (BOM for version alignment)
-    implementation(platform("com.google.firebase:firebase-bom:32.2.2")) // updated version
+    // ----------------------------
+    // Firebase (Auth, Firestore, RealtimeDB, FCM)
+    // ----------------------------
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx") // added Firestore
+    implementation("com.google.firebase:firebase-firestore-ktx")     // Sprint 3 sync
+    implementation("com.google.firebase:firebase-database-ktx")      // Sprint 3 realtime sync
+    implementation("com.google.firebase:firebase-messaging-ktx")     // Sprint 4 notifications
 
+    // ----------------------------
     // Google Sign-In
+    // ----------------------------
     implementation("com.google.android.gms:play-services-auth:21.1.1")
 
+    // ----------------------------
+    // UI Enhancements (Accompanist)
+    // ----------------------------
+    implementation("com.google.accompanist:accompanist-pager:0.30.1")
+    implementation("com.google.accompanist:accompanist-pager-indicators:0.30.1")
+
+    // ----------------------------
     // Testing
+    // ----------------------------
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.10.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
-    // Debug Tools
+    // ----------------------------
+    // Debug tools
+    // ----------------------------
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    // Pager for horizontal carousel
-    implementation("com.google.accompanist:accompanist-pager:0.30.1")
-    implementation("com.google.accompanist:accompanist-pager-indicators:0.30.1")
+    implementation("androidx.compose.material:material-icons-extended:1.5.3")
+
 }

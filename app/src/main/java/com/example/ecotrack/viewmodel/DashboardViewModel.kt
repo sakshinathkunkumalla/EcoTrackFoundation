@@ -24,6 +24,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         syncWithFirebase()
     }
 
+    // Get local activities
     private fun fetchLocalActivities() {
         viewModelScope.launch {
             dao.getAllActivities().collect { list ->
@@ -34,10 +35,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun syncWithFirebase() {
         viewModelScope.launch {
+
             // Push local activities to Firebase
             _activities.value.forEach { repository.addActivity(it) }
 
-            // Optional: Fetch Firebase activities and merge with local
+            // Fetch Firebase activities and merge with local
             val firebaseActivities = repository.getActivities()
             firebaseActivities.forEach {
                 dao.insertActivity(it)

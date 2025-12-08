@@ -10,17 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ecotrack.AuthViewModel
-import com.example.ecotrack.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,118 +24,84 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onRegisterClicked: () -> Unit
 ) {
-    val email = rememberSaveable { mutableStateOf("") }
-    val password = rememberSaveable { mutableStateOf("") }
-    val authError by authViewModel.authError
+    val email = rememberSaveable { mutableStateOf("") } // email state
+    val password = rememberSaveable { mutableStateOf("") } // password state
+    val authError by authViewModel.authError // error state
+    val loading by authViewModel.loading // loading state
 
-    var emailFocused by remember { mutableStateOf(false) }
-    var passwordFocused by remember { mutableStateOf(false) }
+    // Auto-login if user already signed in
+    LaunchedEffect(authViewModel.currentUser.value) {
+        authViewModel.currentUser.value?.let { onLoginSuccess() }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFF80CBC4), Color(0xFFE0F2F1))
-                )
-            ),
+            .background(Brush.verticalGradient(listOf(Color(0xFF80CBC4), Color(0xFFE0F2F1)))),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .shadow(8.dp, RoundedCornerShape(16.dp))
                 .background(Color.White, RoundedCornerShape(16.dp))
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
-            Text(
-                text = "Welcome Back",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF00796B)
-            )
+            // header
+            Text("Welcome Back", fontSize = 28.sp, color = Color(0xFF00796B))
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Login to your account",
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
+
+            // subheader
+            Text("Login to your account", fontSize = 16.sp, color = Color.Gray)
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Email Field
+            // email field
             OutlinedTextField(
                 value = email.value,
                 onValueChange = { email.value = it },
                 label = { Text("Email") },
                 singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(2.dp, RoundedCornerShape(8.dp))
-                    .onFocusChanged { emailFocused = it.isFocused },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Password Field
+            // password field
             OutlinedTextField(
                 value = password.value,
                 onValueChange = { password.value = it },
                 label = { Text("Password") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(2.dp, RoundedCornerShape(8.dp))
-                    .onFocusChanged { passwordFocused = it.isFocused },
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Login Button
             Button(
                 onClick = { authViewModel.signInWithEmail(email.value, password.value) { onLoginSuccess() } },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00796B))
+                enabled = !loading
             ) {
-                Text(
-                    text = "Log In",
-                    fontSize = 18.sp,
-                    color = Color.White,
-                    fontWeight = FontWeight.SemiBold
-                )
+                // loading spinner
+                if (loading) CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(24.dp))
+                else Text("Log In", fontSize = 18.sp, color = Color.White) // login text
             }
-            Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
+            authError?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 12.dp)) }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Text("Don't have an account? ", color = Color.Gray, fontSize = 14.sp)
+
+                // sign up
                 Text(
-                    text = "Don't have an account?",
-                    color = Color.Gray,
-                    fontSize = 14.sp
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Sign Up",
+                    "Sign Up",
                     color = Color(0xFF00796B),
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
                     modifier = Modifier.clickable { onRegisterClicked() }
-                )
-            }
-
-            // Error message
-            authError?.let { err ->
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = err,
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.Bold
                 )
             }
         }

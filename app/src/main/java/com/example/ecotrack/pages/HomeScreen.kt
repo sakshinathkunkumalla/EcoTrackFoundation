@@ -1,11 +1,12 @@
 package com.example.ecotrack.pages
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -13,63 +14,100 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ecotrack.model.ActivityEntity
 import com.example.ecotrack.viewmodel.ActivityViewModel
+import com.example.ecotrack.viewmodel.ChallengeViewModel
+import com.example.ecotrack.viewmodel.RewardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     activityViewModel: ActivityViewModel,
+    challengeViewModel: ChallengeViewModel,
+    rewardViewModel: RewardViewModel,
     onLogout: () -> Unit,
     onAddActivity: () -> Unit,
-    onEditActivity: (activityId: Int) -> Unit
+    onEditActivity: (activityId: Int) -> Unit,
+    onNavigateToChallenges: () -> Unit,
+    onNavigateToRewards: () -> Unit
 ) {
-    val activities by activityViewModel.activities.collectAsState()
+    val activities by activityViewModel.activities.collectAsState(initial = emptyList())
+    val challenges by challengeViewModel.challenges.collectAsState(initial = emptyList())
+    val rewards by rewardViewModel.rewards.collectAsState(initial = emptyList())
+
+    val completedChallenges = challenges.count { it.progress >= it.target }
+    val redeemedRewards = rewards.count { it.redeemed }
+
+    val scrollState = rememberScrollState()
 
     Scaffold(
+        // Top Bar
         topBar = {
             TopAppBar(
-                title = { Text("EcoTrack Dashboard", color = Color.White) },
+                title = {
+                    Text(
+                        "EcoTrack Dashboard",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
+                actions = {
+                    // Logout Button
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            Icons.Filled.Logout,
+                            contentDescription = "Logout",
+                            tint = Color.White
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF00796B)
+                    containerColor = Color(0xFF1E88E5)
                 )
             )
         },
+
+        // FAB Button
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onAddActivity,
-                containerColor = Color(0xFF00796B)
+                containerColor = Color(0xFF1E88E5),
+                contentColor = Color.White
             ) {
-                Text("+", color = Color.White, fontSize = 24.sp)
+                Icon(Icons.Filled.Add, contentDescription = "Add Activity")
             }
         },
-        containerColor = Color(0xFFE0F2F1)
+
+        containerColor = Color(0xFFF2F5F7)
     ) { innerPadding ->
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(scrollState)
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 24.dp)
+                .padding(16.dp)
         ) {
-            // Header
+
             Text(
-                text = "Welcome Back!",
+                "Welcome Back!",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF00796B)
+                color = Color(0xFF1E88E5)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Here’s your eco-dashboard overview.",
-                fontSize = 16.sp,
-                color = Color.Gray
-            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text("Here’s your personalized dashboard.", fontSize = 16.sp, color = Color.Gray)
+
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Dashboard Cards
+            // Dashboard row 1
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -77,43 +115,56 @@ fun HomeScreen(
                 DashboardCard(
                     title = "Activities",
                     value = activities.size.toString(),
+                    icon = Icons.Filled.DirectionsWalk,
                     modifier = Modifier.weight(1f)
-                )
+                ) { onAddActivity() }
+
                 DashboardCard(
                     title = "CO₂ Saved",
-                    value = String.format("%.2f kg", activityViewModel.totalCO2Saved()),
+                    value = String.format("%.1f kg", activityViewModel.totalCO2Saved()),
+                    icon = Icons.Filled.AutoGraph,
                     modifier = Modifier.weight(1f)
-                )
-                DashboardCard(
-                    title = "Challenges",
-                    value = "3", // Placeholder, can be dynamic later
-                    modifier = Modifier.weight(1f)
-                )
+                ) { }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Recent Activities
-            Text(
-                text = "Recent Activities",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF00796B)
-            )
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Dashboard row 2
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                DashboardCard(
+                    title = "Challenges",
+                    value = "${completedChallenges} / ${challenges.size}",
+                    icon = Icons.Filled.Flag,
+                    modifier = Modifier.weight(1f)
+                ) { onNavigateToChallenges() }
+
+                DashboardCard(
+                    title = "Rewards",
+                    value = "${redeemedRewards} / ${rewards.size}",
+                    icon = Icons.Filled.CardGiftcard,
+                    modifier = Modifier.weight(1f)
+                ) { onNavigateToRewards() }
+            }
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            Text(
+                "Recent Activities",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1E88E5)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             if (activities.isEmpty()) {
-                Text(
-                    text = "No activities logged yet.",
-                    color = Color.Gray,
-                    modifier = Modifier.padding(16.dp)
-                )
+                Text("No activities logged yet.", color = Color.Gray)
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(activities) { activity ->
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    activities.forEach { activity ->
                         ActivityCard(
                             activity = activity,
                             onEdit = { onEditActivity(activity.id) },
@@ -123,91 +174,90 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(80.dp))
+        }
+    }
+}
 
-            // Logout Button
-            Button(
-                onClick = onLogout,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00796B))
-            ) {
+// Dashboard Card
+
+@Composable
+fun DashboardCard(
+    title: String,
+    value: String,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    accent: Color = Color(0xFF1E88E5),
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .height(110.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(5.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(icon, contentDescription = title, tint = accent, modifier = Modifier.size(32.dp))
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
                 Text(
-                    text = "Log Out",
-                    color = Color.White,
-                    fontSize = 18.sp
+                    text = value,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF263238)
+                )
+                Text(
+                    text = title,
+                    fontSize = 13.sp,
+                    color = Color(0xFF546E7A)
                 )
             }
         }
     }
 }
 
-@Composable
-fun DashboardCard(title: String, value: String, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = value,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = Color(0xFF00796B)
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = title,
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-        }
-    }
-}
-
+// Activity Card
 @Composable
 fun ActivityCard(
-    activity: com.example.ecotrack.model.ActivityEntity,
+    activity: ActivityEntity,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onEdit() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(4.dp),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             Column(modifier = Modifier.weight(1f)) {
+
+                Text(activity.type, color = Color(0xFF1E88E5), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+
                 Text(
-                    text = activity.type,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF00796B)
+                    "~${String.format("%.1f", activity.co2Saved)} kg CO₂",
+                    color = Color.Gray,
+                    fontSize = 13.sp
                 )
+
                 Text(
-                    text = String.format("~%.2f kg CO₂", activity.co2Saved),
-                    color = Color.Gray
-                )
-                Text(
-                    text = "${activity.durationMinutes} min • ${activity.caloriesBurned} cal",
+                    "${activity.durationMinutes} min • ${activity.caloriesBurned} cal",
                     color = Color.Gray,
                     fontSize = 12.sp
                 )
@@ -215,9 +265,8 @@ fun ActivityCard(
 
             Row {
                 TextButton(onClick = onEdit) {
-                    Text("Edit", color = Color(0xFF00796B))
+                    Text("Edit", color = Color(0xFF1E88E5))
                 }
-                Spacer(modifier = Modifier.width(8.dp))
                 TextButton(onClick = onDelete) {
                     Text("Delete", color = Color.Red)
                 }

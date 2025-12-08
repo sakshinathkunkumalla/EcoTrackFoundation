@@ -6,11 +6,15 @@ import kotlinx.coroutines.flow.Flow
 
 class ActivityRepository(private val dao: ActivityDao) {
 
+    // fetch activities
     fun getAllActivities(): Flow<List<ActivityEntity>> = dao.getAllActivities()
 
+    // add activity
     suspend fun addActivity(activity: ActivityEntity) = dao.insertActivity(activity)
 
+    // update activity
     suspend fun updateActivity(activity: ActivityEntity) = dao.updateActivity(activity)
 
+    // remove activity
     suspend fun deleteActivity(activity: ActivityEntity) = dao.deleteActivity(activity)
 }
